@@ -17,6 +17,10 @@ defmodule MyappWeb.UserView do
   #     jti: user.jti}
   # end
 
+  def render("slack.json", %{user: user}) do
+    %{ text: "go to this url https://front-end/token?#{user.token}" }
+  end
+
   def render("success.json", %{}) do
     %{ message: "success" }
   end

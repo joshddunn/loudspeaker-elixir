@@ -5,7 +5,7 @@ defmodule Myapp.MixProject do
     [
       app: :myapp,
       version: "0.1.0",
-      elixir: "~> 1.5",
+      elixir: "~> 1.8.1",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
@@ -42,7 +42,8 @@ defmodule Myapp.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:joken, "~> 2.0"},
-      {:slack, "~> 0.19.0"}
+      {:slack, "~> 0.19.0"},
+      {:secure_random, "~> 0.5.1"}
     ]
   end
 

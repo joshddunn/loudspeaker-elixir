@@ -7,6 +7,7 @@ defmodule Myapp.Repo.Migrations.CreateUsers do
       add :account_id, :string
       add :jti, :string
       add :token, :string
+      add :token_exp, :integer
 
       timestamps()
     end

@@ -13,7 +13,7 @@ defmodule MyappWeb.Router do
     post "/auth", UserController, :auth
     get "/auth", UserController, :verify_auth
 
-    # post "/slack", SlackController, :create
+    post "/slack", UserController, :slack
     # post "/recording", RecordingController, :create
   end
 end

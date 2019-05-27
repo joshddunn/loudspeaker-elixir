@@ -6,69 +6,43 @@ defmodule MyappWeb.UserController do
 
   action_fallback MyappWeb.FallbackController
 
-  # def index(conn, _params) do
-  #   users = Slack.list_users()
-  #   render(conn, "index.json", users: users)
-  # end
+  def slack(conn, %{"user_id" => account_id, "user_name" => name}) do
+    # need to validate stripe signing secret
 
-  # def create(conn, %{"user" => user_params}) do
-  #   with {:ok, %User{} = user} <- Slack.create_user(user_params) do
-  #     conn
-  #     |> put_status(:created)
-  #     |> put_resp_header("location", Routes.user_path(conn, :show, user))
-  #     |> render("show.json", user: user)
-  #   end
-  # end
+    user_params = %{
+      account_id: account_id,
+      name: name,
+      token: SecureRandom.urlsafe_base64,
+      token_exp: current_time() + 120
+    }
 
-  # def show(conn, %{"id" => id}) do
-  #   user = Slack.get_user!(id)
-  #   render(conn, "show.json", user: user)
-  # end
-
-  # def update(conn, %{"id" => id, "user" => user_params}) do
-  #   user = Slack.get_user!(id)
-
-  #   with {:ok, %User{} = user} <- Slack.update_user(user, user_params) do
-  #     render(conn, "show.json", user: user)
-  #   end
-  # end
-
-  # def delete(conn, %{"id" => id}) do
-  #   user = Slack.get_user!(id)
-
-  #   with {:ok, %User{}} <- Slack.delete_user(user) do
-  #     send_resp(conn, :no_content, "")
-  #   end
-  # end
+    if (existing_user = Slack.get_user_by(account_id: account_id)) do
+      {:ok, user} = Slack.update_user(existing_user, user_params)
+      render(conn, "slack.json", user: user)
+    else
+      {:ok, user} = Slack.create_user(user_params)
+      render(conn, "slack.json", user: user)
+    end
+  end
 
   def auth(conn, %{"auth" => %{"token" => token}}) do
-    {token_int, token_string} = token |> Integer.parse
-
-    if token_int + 120000 < System.system_time(:millisecond) do
-      if (user = Slack.get_user_by(token: token)) do
-        extra_claims = %{"user_id" => user.id, "jti" => user.jti}
-        jwt = MyApp.Token.generate_and_sign!(extra_claims)
-        conn
-        |> put_resp_header("Authorization", jwt)
-        |> render(conn, "success.json")
-      else
-        send_resp(conn, :unauthorized, "")
-      end
+    if (user = Slack.get_user_by(token: token)) && user.token_exp < current_time() do
+      extra_claims = %{"user_id" => user.id, "jti" => user.jti}
+      jwt = MyApp.Token.generate_and_sign!(extra_claims)
+      conn
+      |> put_resp_header("Authorization", jwt)
+      |> render(conn, "success.json")
     else
-      send_resp(conn, :bad_request, "")
+      send_resp(conn, :unauthorized, "")
     end
   end
 
   def verify_auth(conn, _params) do
     token = get_req_header(conn, "authorization") |> List.first
+    {result, _} = MyApp.Token.verify_and_validate(token)
 
-    if token do
-      {result, claims} = MyApp.Token.verify_and_validate(token)
-      if result == :ok do
-        render(conn, "success.json")
-      else
-        send_resp(conn, :unauthorized, "")
-      end
+    if result == :ok do
+      render(conn, "success.json")
     else
       send_resp(conn, :unauthorized, "")
     end
@@ -76,5 +50,9 @@ defmodule MyappWeb.UserController do
 
   def ping(conn, _params) do
     render(conn, "success.json")
+  end
+
+  defp current_time do
+    DateTime.utc_now |> DateTime.to_unix
   end
 end
