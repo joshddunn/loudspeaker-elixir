@@ -8,9 +8,6 @@ services:
     command: >
       bash -c "
         mix deps.get
-        cd assets &&
-        npm install &&
-        cd .. &&
         mix ecto.create &&
         mix ecto.migrate &&
         iex -S mix phx.server
