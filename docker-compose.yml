@@ -1,0 +1,25 @@
+version: '3.2'
+services:
+  db:
+    image: postgres
+
+  app:
+    build: .
+    command: >
+      bash -c "
+        mix deps.get
+        cd assets &&
+        npm install &&
+        cd .. &&
+        mix ecto.create &&
+        mix ecto.migrate &&
+        iex -S mix phx.server
+      "
+    volumes:
+      - .:/myapp
+    ports:
+      - "4000:4000"
+    depends_on:
+      - db
+    stdin_open: true
+    tty: true
