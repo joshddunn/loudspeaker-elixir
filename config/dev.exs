@@ -57,3 +57,5 @@ config :phoenix, :stacktrace_depth, 20
 config :phoenix, :plug_init_mode, :runtime
 
 config :joken, default_signer: "secret"
+
+import_config "dev.secret.exs"

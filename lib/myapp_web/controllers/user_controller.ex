@@ -7,21 +7,23 @@ defmodule MyappWeb.UserController do
   action_fallback MyappWeb.FallbackController
 
   def slack(conn, %{"user_id" => account_id, "user_name" => name}) do
-    # need to validate stripe signing secret
+    if verify_slack_signature(conn) do
+      user_params = %{
+        account_id: account_id,
+        name: name,
+        token: SecureRandom.urlsafe_base64,
+        token_exp: current_time() + 120
+      }
 
-    user_params = %{
-      account_id: account_id,
-      name: name,
-      token: SecureRandom.urlsafe_base64,
-      token_exp: current_time() + 120
-    }
-
-    if (existing_user = Slack.get_user_by(account_id: account_id)) do
-      {:ok, user} = Slack.update_user(existing_user, user_params)
-      render(conn, "slack.json", user: user)
+      if (existing_user = Slack.get_user_by(account_id: account_id)) do
+        {:ok, user} = Slack.update_user(existing_user, user_params)
+        render(conn, "slack.json", user: user)
+      else
+        {:ok, user} = Slack.create_user(user_params)
+        render(conn, "slack.json", user: user)
+      end
     else
-      {:ok, user} = Slack.create_user(user_params)
-      render(conn, "slack.json", user: user)
+      send_resp(conn, :unauthorized, "")
     end
   end
 
@@ -54,5 +56,14 @@ defmodule MyappWeb.UserController do
 
   defp current_time do
     DateTime.utc_now |> DateTime.to_unix
+  end
+
+  defp verify_slack_signature(conn) do
+    signature = get_req_header(conn, "x-slack-signature") |> List.first
+    {timestamp, _} = get_req_header(conn, "x-slack-request-timestamp") |> List.first |> Integer.parse
+    raw_body = conn.assigns[:raw_body] |> List.first
+    sig_basestring = "v0:#{timestamp}:#{raw_body}"
+    sha = :crypto.hmac(:sha256, Application.fetch_env!(:slack, :signing_secret), sig_basestring) |> Base.encode16 |> String.downcase
+    signature == "v0=#{sha}" && abs(timestamp - current_time()) < 300
   end
 end
