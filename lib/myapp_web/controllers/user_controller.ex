@@ -3,17 +3,17 @@ defmodule MyappWeb.UserController do
 
   alias Myapp.Slack
   alias Myapp.Slack.User
+  alias Myapp.Auth
 
   action_fallback MyappWeb.FallbackController
 
   def slack(conn, %{"user_id" => account_id, "user_name" => name}) do
-    if verify_slack_signature(conn) do
-      user_params = %{
+    if Auth.verify_slack_signature(conn) do
+
+      user_params = Auth.generate_token(%{
         account_id: account_id,
         name: name,
-        token: SecureRandom.urlsafe_base64,
-        token_exp: current_time() + 120
-      }
+      })
 
       if (existing_user = Slack.get_user_by(account_id: account_id)) do
         {:ok, user} = Slack.update_user(existing_user, user_params)
@@ -28,11 +28,9 @@ defmodule MyappWeb.UserController do
   end
 
   def auth(conn, %{"auth" => %{"token" => token}}) do
-    if (user = Slack.get_user_by(token: token)) && user.token_exp < current_time() do
-      extra_claims = %{"user_id" => user.id, "jti" => user.jti}
-      jwt = MyApp.Token.generate_and_sign!(extra_claims)
+    if (user = Auth.verify_token(token)) do
       conn
-      |> put_resp_header("Authorization", jwt)
+      |> put_resp_header("Authorization", Auth.generate_jwt(user))
       |> render(conn, "success.json")
     else
       send_resp(conn, :unauthorized, "")
@@ -41,8 +39,7 @@ defmodule MyappWeb.UserController do
 
   def verify_auth(conn, _params) do
     token = get_req_header(conn, "authorization") |> List.first
-
-    if validate_user(token) do
+    if Auth.verify_jwt(token) do
       render(conn, "success.json")
     else
       send_resp(conn, :unauthorized, "")
@@ -51,24 +48,5 @@ defmodule MyappWeb.UserController do
 
   def ping(conn, _params) do
     render(conn, "success.json")
-  end
-
-  defp current_time do
-    DateTime.utc_now |> DateTime.to_unix
-  end
-
-  defp verify_slack_signature(conn) do
-    signature = get_req_header(conn, "x-slack-signature") |> List.first
-    {timestamp, _} = get_req_header(conn, "x-slack-request-timestamp") |> List.first |> Integer.parse
-    raw_body = conn.assigns[:raw_body] |> List.first
-    sig_basestring = "v0:#{timestamp}:#{raw_body}"
-    sha = :crypto.hmac(:sha256, Application.fetch_env!(:slack, :signing_secret), sig_basestring) |> Base.encode16 |> String.downcase
-    signature == "v0=#{sha}" && abs(timestamp - current_time()) < 300
-  end
-
-  defp validate_user(token) do
-    {result, payload} = MyApp.Token.verify_and_validate(token)
-    user = Slack.get_user(payload["user_id"])
-    result == :ok && user && user.jti == payload["jti"]
   end
 end
