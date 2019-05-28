@@ -41,9 +41,8 @@ defmodule MyappWeb.UserController do
 
   def verify_auth(conn, _params) do
     token = get_req_header(conn, "authorization") |> List.first
-    {result, _} = MyApp.Token.verify_and_validate(token)
 
-    if result == :ok do
+    if validate_user(token) do
       render(conn, "success.json")
     else
       send_resp(conn, :unauthorized, "")
@@ -65,5 +64,11 @@ defmodule MyappWeb.UserController do
     sig_basestring = "v0:#{timestamp}:#{raw_body}"
     sha = :crypto.hmac(:sha256, Application.fetch_env!(:slack, :signing_secret), sig_basestring) |> Base.encode16 |> String.downcase
     signature == "v0=#{sha}" && abs(timestamp - current_time()) < 300
+  end
+
+  defp validate_user(token) do
+    {result, payload} = MyApp.Token.verify_and_validate(token)
+    user = Slack.get_user(payload["user_id"])
+    result == :ok && user && user.jti == payload["jti"]
   end
 end

@@ -36,6 +36,7 @@ defmodule Myapp.Slack do
 
   """
   def get_user!(id), do: Repo.get!(User, id)
+  def get_user(id), do: Repo.get(User, id)
   def get_user_by!(conditions), do: Repo.get_by!(User, conditions)
   def get_user_by(conditions), do: Repo.get_by(User, conditions)
 
