@@ -53,7 +53,8 @@ defmodule MyappWeb.UserController do
   def recording(conn, %{"recording" => recording}) do
     token = get_req_header(conn, "authorization") |> List.first
     if (user = Auth.verify_jwt(token)) do
-      response = Files.upload(recording["file"].path, "Recording.mp3", %{channels: "#general", initial_comment: "New recording from #{user.name}."})
+      channel = recording["channel"] || "general"
+      response = Files.upload(recording["file"].path, "Recording.mp3", %{channels: "##{channel}", initial_comment: "New recording from #{user.name}."})
       if response["ok"] do
         render(conn, "success.json")
       else
