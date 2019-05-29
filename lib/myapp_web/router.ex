@@ -10,11 +10,11 @@ defmodule MyappWeb.Router do
 
     get "/ping", UserController, :ping
 
+    get "/auth", UserController, :verify_auth
     post "/auth", UserController, :auth
 
-    get "/auth", UserController, :verify_auth
-
     post "/slack", UserController, :slack
+
     post "/recording", UserController, :recording
   end
 end
