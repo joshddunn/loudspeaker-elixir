@@ -66,7 +66,8 @@ defmodule MyappWeb.UserController do
 
   defp parse_channel(channel) do
     if channel && String.strip(channel) != "" do
-      if (channel |> String.slice(0,1)) == "@" do
+      first_char = channel |> String.slice(0,1)
+      if first_char == "@" || first_char == "#" do
         channel
       else
         "##{channel}"
