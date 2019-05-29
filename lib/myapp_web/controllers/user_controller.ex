@@ -53,8 +53,7 @@ defmodule MyappWeb.UserController do
   def recording(conn, %{"recording" => recording}) do
     token = get_req_header(conn, "authorization") |> List.first
     if (user = Auth.verify_jwt(token)) do
-      channel = recording["channel"] || "#general"
-      response = Files.upload(recording["file"].path, "Recording.mp3", %{channels: channel, initial_comment: "New recording from #{user.name}."})
+      response = Files.upload(recording["file"].path, "Recording.mp3", %{channels: parse_channel(recording["channel"]), initial_comment: "New recording from #{user.name}."})
       if response["ok"] do
         render(conn, "success.json")
       else
@@ -62,6 +61,18 @@ defmodule MyappWeb.UserController do
       end
     else
       send_resp(conn, :unauthorized, "")
+    end
+  end
+
+  defp parse_channel(channel) do
+    if channel && String.strip(channel) != "" do
+      if channel[0] == "@" do
+        channel
+      else
+        "##{channel}"
+      end
+    else
+      "#general"
     end
   end
 end
