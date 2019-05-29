@@ -23,7 +23,7 @@ defmodule Myapp.Auth do
 
   def generate_token(payload = %{}) do
     payload
-    |> Map.put(:token, SecureRandom.urlsafe_base64)
+    |> Map.put(:token, SecureRandom.hex(10))
     |> Map.put(:token_exp, current_time() + 120)
   end
 

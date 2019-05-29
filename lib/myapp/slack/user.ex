@@ -24,7 +24,7 @@ defmodule Myapp.Slack.User do
     if user.data.jti || Map.has_key?(attrs, :jti) do
       user
     else
-      changes = user.changes |> Map.put(:jti, SecureRandom.urlsafe_base64)
+      changes = user.changes |> Map.put(:jti, SecureRandom.hex(24))
       user |> Map.put(:changes, changes)
     end
   end
