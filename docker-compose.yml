@@ -17,7 +17,7 @@ services:
     volumes:
       - .:/myapp
     ports:
-      - "4000:4000"
+      - "3000:3000"
     depends_on:
       - db
     stdin_open: true

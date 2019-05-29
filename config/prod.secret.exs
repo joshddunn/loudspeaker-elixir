@@ -25,7 +25,7 @@ secret_key_base =
     """
 
 config :myapp, MyappWeb.Endpoint,
-  http: [:inet6, port: String.to_integer(System.get_env("PORT") || "4000")],
+  http: [:inet6, port: String.to_integer(System.get_env("PORT") || "3000")],
   secret_key_base: secret_key_base
 
 joken_secret =
