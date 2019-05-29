@@ -28,15 +28,6 @@ config :myapp, MyappWeb.Endpoint,
   http: [:inet6, port: String.to_integer(System.get_env("PORT") || "4000")],
   secret_key_base: secret_key_base
 
-slack_signing_secret =
-  System.get_env("SLACK_SIGNING_SECRET") ||
-    raise """
-    environment variable SLACK_SIGNING_SECRET is missing.
-    """
-
-config :slack,
-  signing_secret: slack_signing_secret
-
 joken_secret =
   System.get_env("JOKEN_SECRET") ||
     raise """

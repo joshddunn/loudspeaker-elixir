@@ -43,7 +43,8 @@ defmodule Myapp.MixProject do
       {:plug_cowboy, "~> 2.0"},
       {:joken, "~> 2.0"},
       {:slack, "~> 0.19.0"},
-      {:secure_random, "~> 0.5.1"}
+      {:secure_random, "~> 0.5.1"},
+      {:cors_plug, "~> 2.0"}
     ]
   end
 

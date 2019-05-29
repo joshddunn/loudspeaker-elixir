@@ -1,3 +1,3 @@
-defmodule MyApp.Token do
+defmodule Myapp.Token do
   use Joken.Config
 end

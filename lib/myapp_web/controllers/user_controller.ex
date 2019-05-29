@@ -1,8 +1,8 @@
 defmodule MyappWeb.UserController do
   use MyappWeb, :controller
 
+  alias Slack.Web.Files
   alias Myapp.Slack
-  alias Myapp.Slack.User
   alias Myapp.Auth
 
   action_fallback MyappWeb.FallbackController
@@ -30,8 +30,8 @@ defmodule MyappWeb.UserController do
   def auth(conn, %{"auth" => %{"token" => token}}) do
     if (user = Auth.verify_token(token)) do
       conn
-      |> put_resp_header("Authorization", Auth.generate_jwt(user))
-      |> render(conn, "success.json")
+      |> put_resp_header("authorization", Auth.generate_jwt(user))
+      |> render("success.json")
     else
       send_resp(conn, :unauthorized, "")
     end
@@ -48,5 +48,19 @@ defmodule MyappWeb.UserController do
 
   def ping(conn, _params) do
     render(conn, "success.json")
+  end
+
+  def recording(conn, %{"recording" => recording}) do
+    token = get_req_header(conn, "authorization") |> List.first
+    if (user = Auth.verify_jwt(token)) do
+      response = Files.upload(recording["file"].path, "Recording.mp3", %{channels: "#spam", initial_comment: "New recording from #{user.name}."})
+      if response["ok"] do
+        render(conn, "success.json")
+      else
+        send_resp(conn, :unprocessable_entity, "")
+      end
+    else
+      send_resp(conn, :unauthorized, "")
+    end
   end
 end

@@ -1,11 +1,18 @@
 defmodule Myapp.Auth do
+
+  alias Myapp.Slack
+
   def generate_jwt(user) do
     extra_claims = %{"user_id" => user.id, "jti" => user.jti}
-    MyApp.Token.generate_and_sign!(extra_claims)
+    Myapp.Token.generate_and_sign!(extra_claims)
+  end
+
+  def verify_jwt(nil) do
+    nil
   end
 
   def verify_jwt(token) do
-    {result, payload} = MyApp.Token.verify_and_validate(token)
+    {result, payload} = Myapp.Token.verify_and_validate(token)
     user = Slack.get_user(payload["user_id"])
     if result == :ok && user && user.jti == payload["jti"] do
       user
@@ -21,7 +28,7 @@ defmodule Myapp.Auth do
   end
 
   def verify_token(token) do
-    if (user = Slack.get_user_by(token: token)) && user.token_exp < current_time() do
+    if (user = Slack.get_user_by(token: token)) && user.token_exp > current_time() do
       user
     else
       nil
